@@ -41,7 +41,7 @@
 
       #time-panel {
         position: absolute;
-        top: 12px;
+        top: 48px;
         left: 12px;
         right: 12px;
         max-width: 320px;
@@ -172,7 +172,7 @@
         );
 
         // Add zoom control at the bottom right.
-        L.control.zoom({ position: "bottomright" }).addTo(map);
+        L.control.zoom({ position: "bottomleft" }).addTo(map);
 
         L.tileLayer(MAPPING_API_URL, {
           maxZoom: 19,
