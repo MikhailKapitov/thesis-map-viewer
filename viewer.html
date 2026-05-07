@@ -132,6 +132,17 @@
         <label style="margin-top: 8px">⏰ Time</label>
         <input type="time" id="time-picker" disabled />
       </div>
+      <div style="margin-top: 12px">
+        <label>🔊 Noise class</label>
+        <select id="noise-class" style="width: 100%; background: #222; color: white; border: 1px solid #555; padding: 8px; border-radius: 8px; font-size: 14px;">
+          <option value="all">All</option>
+          <option value="alert">Alert</option>
+          <option value="building_noise">Building Noise</option>
+          <option value="human">Human</option>
+          <option value="transport">Transport</option>
+          <option value="others">Others</option>
+        </select>
+      </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -271,7 +282,8 @@
           try {
             const bounds = map.getBounds();
             const bbox = `${bounds.getWest()},${bounds.getSouth()},${bounds.getEast()},${bounds.getNorth()}`;
-            const url = `${PREDICTION_API_URL}/predict?bbox=${bbox}&time=${encodeURIComponent(selectedTimeISO)}`;
+            const noiseClass = document.getElementById('noise-class').value;
+            const url = `${PREDICTION_API_URL}/predict?bbox=${bbox}&time=${encodeURIComponent(selectedTimeISO)}&noise_class=${noiseClass}`;
 
             const res = await fetch(url);
             if (!res.ok) throw new Error("HTTP " + res.status);
@@ -307,6 +319,8 @@
         }
 
         map.on("moveend", handleMoveEnd);
+
+        document.getElementById('noise-class').addEventListener('change', () => fetchDataAndUpdate());
 
         // Initialise with fallback data, then fetch real data.
         map.whenReady(() => {
