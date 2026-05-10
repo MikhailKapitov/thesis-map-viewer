@@ -187,8 +187,9 @@
 
         L.tileLayer(MAPPING_API_URL, {
           maxZoom: 19,
-          attribution: "© OpenStreetMap",
+          attribution: "",
         }).addTo(map);
+        map.attributionControl.setPrefix(false);
 
         const idwLayer = L.idwLayer([], {
           opacity: 0.25, // Overall transparency of the overlay.
