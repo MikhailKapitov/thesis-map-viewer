@@ -107,6 +107,15 @@
         cursor: pointer;
       }
 
+      .comment-marker {
+        background: none !important;
+        border: none !important;
+        font-size: 24px;
+        line-height: 24px;
+        text-align: center;
+        filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+      }
+
       @media (max-width: 400px) {
         .datetime-inputs {
           flex-direction: column;
@@ -152,6 +161,7 @@
       (function () {
         // Hard-coded (For now?).
         const PREDICTION_API_URL = "http://localhost:5000";
+        const COMMENTS_API_URL = "http://localhost:8080"
         const MAPPING_API_URL =
           "https://mapping.urban-noise.watch/tile/{z}/{x}/{y}.png";
 
@@ -204,6 +214,8 @@
             1.0: "red",
           },
         }).addTo(map);
+
+        const commentLayer = L.layerGroup().addTo(map);
 
         const loadingEl = document.getElementById("loading");
 
@@ -271,8 +283,59 @@
           idwLayer.setLatLngs(points);
         }
 
+        let commentDebounce;
+
+        async function fetchComments() {
+          const zoom = map.getZoom();
+          // Only load comments at reasonable zoom levels (Bases on the default Almaty zoom RN).
+          if (zoom < 11) {
+            commentLayer.clearLayers();
+            return;
+          }
+
+          clearTimeout(commentDebounce);
+          commentDebounce = setTimeout(async () => {
+            try {
+              const bounds = map.getBounds();
+              const params = new URLSearchParams({
+                minLat: bounds.getSouth(),
+                maxLat: bounds.getNorth(),
+                minLng: bounds.getWest(),
+                maxLng: bounds.getEast(),
+              });
+              const url = `${COMMENTS_API_URL}/api/v1/comments/area?${params}`;
+              const res = await fetch(url);
+              if (!res.ok) throw new Error("HTTP " + res.status);
+              const comments = await res.json();
+
+              commentLayer.clearLayers();
+              comments.forEach((c) => {
+                const marker = L.marker([c.latitude, c.longitude], {
+                  icon: L.divIcon({
+                    className: 'comment-marker',
+                    html: '💬',
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12],
+                  }),
+                });
+                marker.bindPopup(`
+                  <div style="font-family: system-ui; max-width: 200px;">
+                    <div style="font-weight: 600; margin-bottom: 4px;">${c.displayName}</div>
+                    <div style="font-size: 13px; color: #333;">${c.text}</div>
+                    <div style="margin-top: 4px; font-size: 11px; color: #999;">${new Date(c.createdAt).toLocaleString()}</div>
+                  </div>
+                `);
+                marker.addTo(commentLayer);
+              });
+            } catch (err) {
+              console.warn("Failed to fetch comments", err);
+            }
+          }, 500);
+        }
+
         // Fetch prediction data from the backend using the currently selected time.
         async function fetchDataAndUpdate() {
+          fetchComments();
           const selectedTimeISO = getSelectedTimeISO();
           if (!selectedTimeISO) {
             console.warn("No valid time selected.");
@@ -283,8 +346,8 @@
           try {
             const bounds = map.getBounds();
             const bbox = `${bounds.getWest()},${bounds.getSouth()},${bounds.getEast()},${bounds.getNorth()}`;
-            const noiseClass = document.getElementById('noise-class').value;
-            const url = `${PREDICTION_API_URL}/predict?bbox=${bbox}&time=${encodeURIComponent(selectedTimeISO)}&noise_class=${noiseClass}`;
+            // const noiseClass = document.getElementById('noise-class').value;
+            const url = `${PREDICTION_API_URL}/predict?bbox=${bbox}&time=${encodeURIComponent(selectedTimeISO)}`; // &noise_class=${noiseClass}
 
             const res = await fetch(url);
             if (!res.ok) throw new Error("HTTP " + res.status);
@@ -321,7 +384,7 @@
 
         map.on("moveend", handleMoveEnd);
 
-        document.getElementById('noise-class').addEventListener('change', () => fetchDataAndUpdate());
+        // document.getElementById('noise-class').addEventListener('change', () => fetchDataAndUpdate());
 
         // Initialise with fallback data, then fetch real data.
         map.whenReady(() => {
