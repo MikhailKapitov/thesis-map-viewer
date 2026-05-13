@@ -199,7 +199,7 @@
         const COMMENTS_API_URL = "http://localhost:8080";
         const MAPPING_API_URL =
           "https://mapping.urban-noise.watch/tile/{z}/{x}/{y}.png";
-        const SEARCH_API_URL = "https://nominatim.openstreetmap.org";
+        const SEARCH_API_URL = "https://mapping.urban-noise.watch/geocode";
 
         // Remove these later; purely testing data.
         const FALLBACK_POINTS = [
@@ -359,12 +359,12 @@
           }, 500);
         });
 
-        // Hide results when clicking outside.
-        document.addEventListener("click", (e) => {
-          if (!e.target.closest("#time-panel")) {
-            searchResults.innerHTML = "";
-          }
-        });
+        // // Hide results when clicking outside.
+        // document.addEventListener("click", (e) => {
+        //   if (!e.target.closest("#time-panel")) {
+        //     searchResults.innerHTML = "";
+        //   }
+        // });
 
         // Hide the IDW layer while moving/zooming.
         let isMovingCnt = 0;
