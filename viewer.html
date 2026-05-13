@@ -120,6 +120,43 @@
         transition: opacity 0.5s ease;
       }
 
+      /* Search panel additions */
+      #search-input {
+        width: 100%;
+        background: #222;
+        color: white;
+        border: 1px solid #555;
+        padding: 8px;
+        border-radius: 8px;
+        font-size: 14px;
+        /* margin-top: 12px; */
+        outline: none;
+      }
+
+      #search-results {
+        margin-top: 4px;
+        max-height: 150px;
+        overflow-y: auto;
+        border-radius: 8px;
+        background: #1a1a1a;
+      }
+
+      .search-result-item {
+        padding: 8px 10px;
+        cursor: pointer;
+        color: #ddd;
+        border-bottom: 1px solid #333;
+        font-size: 13px;
+      }
+
+      .search-result-item:hover {
+        background: #333;
+      }
+
+      .search-result-item:last-child {
+        border-bottom: none;
+      }
+
       @media (max-width: 400px) {
         .datetime-inputs {
           flex-direction: column;
@@ -131,7 +168,7 @@
     <div id="map"></div>
     <div id="loading">Loading IDW layer…</div>
 
-    <!-- Time selection panel with separate date/time and current toggle. -->
+    <!-- Time selection panel with search integrated -->
     <div id="time-panel">
       <div class="time-row">
         <input type="checkbox" id="use-current-time" checked />
@@ -145,17 +182,11 @@
         <label style="margin-top: 8px">⏰ Time</label>
         <input type="time" id="time-picker" disabled />
       </div>
-      <!-- <div style="margin-top: 12px">
-        <label>🔊 Noise class</label>
-        <select id="noise-class" style="width: 100%; background: #222; color: white; border: 1px solid #555; padding: 8px; border-radius: 8px; font-size: 14px;">
-          <option value="all">All</option>
-          <option value="alert">Alert</option>
-          <option value="building_noise">Building Noise</option>
-          <option value="human">Human</option>
-          <option value="transport">Transport</option>
-          <option value="others">Others</option>
-        </select>
-      </div> -->
+      <!-- Simple Nominatim search integrated into the same panel. -->
+      <hr style="border-color: #444; margin: 12px 0" />
+      <!-- <label style="color: #aaa; font-size: 12px">🔍 Search a place</label> -->
+      <input type="text" id="search-input" placeholder="Search place..." />
+      <div id="search-results"></div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -168,6 +199,7 @@
         const COMMENTS_API_URL = "http://localhost:8080";
         const MAPPING_API_URL =
           "https://mapping.urban-noise.watch/tile/{z}/{x}/{y}.png";
+        const SEARCH_API_URL = "https://nominatim.openstreetmap.org";
 
         // Remove these later; purely testing data.
         const FALLBACK_POINTS = [
@@ -280,6 +312,59 @@
 
         // Initial state: manual controls hidden (checkbox is checked).
         toggleManualControls();
+
+        // Nominatim search logic.
+        const searchInput = document.getElementById("search-input");
+        const searchResults = document.getElementById("search-results");
+
+        let searchDebounce;
+        searchInput.addEventListener("input", () => {
+          const query = searchInput.value.trim();
+          if (query.length < 3) {
+            searchResults.innerHTML = "";
+            return;
+          }
+          clearTimeout(searchDebounce);
+          searchDebounce = setTimeout(async () => {
+            try {
+              const response = await fetch(
+                `${SEARCH_API_URL}/search?q=${encodeURIComponent(query)}&format=json&limit=16`,
+              );
+              const data = await response.json();
+              searchResults.innerHTML = data
+                .map(
+                  (r) =>
+                    `<div class="search-result-item" data-lat="${r.lat}" data-lon="${r.lon}" data-name="${r.display_name}">${r.display_name}</div>`,
+                )
+                .join("");
+              // Attach click listeners to all result items.
+              document.querySelectorAll(".search-result-item").forEach((el) => {
+                el.addEventListener("click", (e) => {
+                  const lat = parseFloat(e.currentTarget.dataset.lat);
+                  const lon = parseFloat(e.currentTarget.dataset.lon);
+                  const name = e.currentTarget.dataset.name;
+                  map.setView([lat, lon], 14);
+                  if (marker) marker.remove();
+                  marker = L.marker([lat, lon])
+                    .addTo(map)
+                    .bindPopup(name)
+                    .openPopup();
+                  searchResults.innerHTML = "";
+                  searchInput.value = "";
+                });
+              });
+            } catch (err) {
+              console.warn("Nominatim search error", err);
+            }
+          }, 500);
+        });
+
+        // Hide results when clicking outside.
+        document.addEventListener("click", (e) => {
+          if (!e.target.closest("#time-panel")) {
+            searchResults.innerHTML = "";
+          }
+        });
 
         // Hide the IDW layer while moving/zooming.
         let isMovingCnt = 0;
