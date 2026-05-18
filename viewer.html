@@ -372,10 +372,13 @@
         map.on("movestart zoomstart", function () {
           isMovingCnt++;
           idwLayer._canvas.style.opacity = "0";
+          // console.log("++ =>", isMovingCnt);
         });
 
         map.on("moveend zoomend", function () {
-          isMovingCnt--;
+          // IDK fullscreen failsafe.
+          if (isMovingCnt > 0) isMovingCnt--;
+          // console.log("-- =>", isMovingCnt);
         });
 
         function updateIDWLayer(points) {
