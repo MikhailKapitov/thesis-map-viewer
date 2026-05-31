@@ -166,31 +166,66 @@
   </head>
   <body>
     <div id="map"></div>
-    <div id="loading">Loading IDW layer…</div>
+    <div id="loading"></div>
 
     <!-- Time selection panel with search integrated -->
     <div id="time-panel">
       <div class="time-row">
         <input type="checkbox" id="use-current-time" checked />
-        <label for="use-current-time" style="display: inline; margin: 0"
-          >🕒 Use current time</label
-        >
+        <label for="use-current-time" style="display: inline; margin: 0" id="use-current-label"></label>
       </div>
       <div id="manual-time-controls" style="display: none; margin-top: 10px">
-        <label>📅 Date</label>
+        <label id="date-label"></label>
         <input type="date" id="date-picker" disabled />
-        <label style="margin-top: 8px">⏰ Time</label>
+        <label style="margin-top: 8px" id="time-label"></label>
         <input type="time" id="time-picker" disabled />
       </div>
-      <!-- Simple Nominatim search integrated into the same panel. -->
       <hr style="border-color: #444; margin: 12px 0" />
-      <!-- <label style="color: #aaa; font-size: 12px">🔍 Search a place</label> -->
-      <input type="text" id="search-input" placeholder="Search place..." />
+      <input type="text" id="search-input" placeholder="" />
       <div id="search-results"></div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/leaflet.idw@0.0.1/src/leaflet-idw.js"></script>
+
+    <!-- Minimal localisation avoiding external files. -->
+    <script>
+      const VIEWER_TRANSLATIONS = {
+        en: {
+          useCurrentTime: '🕒 Use current time',
+          date: '📅 Date',
+          time: '⏰ Time',
+          loading: 'Loading IDW layer…',
+          searchPlaceholder: 'Search place...'
+        },
+        ru: {
+          useCurrentTime: '🕒 Использовать текущее время',
+          date: '📅 Дата',
+          time: '⏰ Время',
+          loading: 'Загрузка слоя IDW…',
+          searchPlaceholder: 'Поиск места...'
+        },
+        kz: {
+          useCurrentTime: '🕒 Ағымдағы уақытты қолдану',
+          date: '📅 Күні',
+          time: '⏰ Уақыты',
+          loading: 'IDW қабаты жүктелуде…',
+          searchPlaceholder: 'Орынды іздеу...'
+        }
+      };
+
+      // Determine language from query param, external variable, or browser.
+      const LANG =
+        new URLSearchParams(window.location.search).get('lang') ||
+        window.VIEWER_LANG ||
+        (navigator.language || '').split('-')[0] ||
+        'en';
+
+      function t(key) {
+        const dict = VIEWER_TRANSLATIONS[LANG] || VIEWER_TRANSLATIONS.en;
+        return dict[key] || VIEWER_TRANSLATIONS.en[key] || key;
+      }
+    </script>
 
     <script>
       (function () {
@@ -496,6 +531,13 @@
           updateIDWLayer(FALLBACK_POINTS);
           fetchDataAndUpdate();
         });
+
+        // Apply translations to the static UI elementsю
+        loadingEl.textContent = t('loading');
+        document.getElementById('use-current-label').textContent = t('useCurrentTime');
+        document.getElementById('date-label').textContent = t('date');
+        document.getElementById('time-label').textContent = t('time');
+        document.getElementById('search-input').placeholder = t('searchPlaceholder');
 
         // External communication (for React Native "goto" commands).
         let marker = null;
