@@ -482,7 +482,7 @@
             return;
           }
 
-          loadingEl.style.display = "block";
+          loadingEl.style.display = "none"; // "block" to re-enable the debug message.
           try {
             const bounds = map.getBounds();
             const bbox = `${bounds.getWest()},${bounds.getSouth()},${bounds.getEast()},${bounds.getNorth()}`;
