@@ -423,7 +423,6 @@
           idwLayer.setLatLngs(points);
         }
 
-        let commentDebounce;
         let currentAbortController = null;
 
         async function fetchComments(signal) {
@@ -434,46 +433,43 @@
             return;
           }
 
-          clearTimeout(commentDebounce);
-          commentDebounce = setTimeout(async () => {
-            try {
-              const bounds = map.getBounds();
-              const params = new URLSearchParams({
-                minLat: bounds.getSouth(),
-                maxLat: bounds.getNorth(),
-                minLng: bounds.getWest(),
-                maxLng: bounds.getEast(),
-              });
-              const url = `${COMMENTS_API_URL}/api/v1/comments/area?${params}`;
-              const res = await fetch(url, { signal });
-              if (!res.ok) throw new Error("HTTP " + res.status);
-              const comments = await res.json();
+          try {
+            const bounds = map.getBounds();
+            const params = new URLSearchParams({
+              minLat: bounds.getSouth(),
+              maxLat: bounds.getNorth(),
+              minLng: bounds.getWest(),
+              maxLng: bounds.getEast(),
+            });
+            const url = `${COMMENTS_API_URL}/api/v1/comments/area?${params}`;
+            const res = await fetch(url, { signal });
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            const comments = await res.json();
 
-              commentLayer.clearLayers();
-              comments.forEach((c) => {
-                const marker = L.marker([c.latitude, c.longitude], {
-                  icon: L.divIcon({
-                    className: "comment-marker",
-                    html: "💬",
-                    iconSize: [24, 24],
-                    iconAnchor: [12, 12],
-                  }),
-                });
-                marker.bindPopup(`
-                  <div style="font-family: system-ui; max-width: 200px;">
-                    <div style="font-weight: 600; margin-bottom: 4px;">${c.displayName}</div>
-                    <div style="font-size: 13px; color: #333;">${c.text}</div>
-                    <div style="margin-top: 4px; font-size: 11px; color: #999;">${new Date(c.createdAt).toLocaleString()}</div>
-                  </div>
-                `);
-                marker.addTo(commentLayer);
+            commentLayer.clearLayers();
+            comments.forEach((c) => {
+              const marker = L.marker([c.latitude, c.longitude], {
+                icon: L.divIcon({
+                  className: "comment-marker",
+                  html: "💬",
+                  iconSize: [24, 24],
+                  iconAnchor: [12, 12],
+                }),
               });
-            } catch (err) {
-              if (err.name !== 'AbortError') {
-                console.warn("Failed to fetch comments", err);
-              }
+              marker.bindPopup(`
+                <div style="font-family: system-ui; max-width: 200px;">
+                  <div style="font-weight: 600; margin-bottom: 4px;">${c.displayName}</div>
+                  <div style="font-size: 13px; color: #333;">${c.text}</div>
+                  <div style="margin-top: 4px; font-size: 11px; color: #999;">${new Date(c.createdAt).toLocaleString()}</div>
+                </div>
+              `);
+              marker.addTo(commentLayer);
+            });
+          } catch (err) {
+            if (err.name !== 'AbortError') {
+              console.warn("Failed to fetch comments", err);
             }
-          }, 500);
+          }
         }
 
         // Fetch prediction data from the backend using the currently selected time.
