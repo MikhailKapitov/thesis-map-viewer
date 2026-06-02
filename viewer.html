@@ -275,12 +275,13 @@
         const idwLayer = L.idwLayer([], {
           opacity: 0.25, // Overall transparency of the overlay.
           cellSize: 15, // Resolution. Higher values look worse, but compute quicker.
-          exp: 1.01, // Weighting exponent. Higher values lead to sharper, more localized "blobs".
+          exp: 2.01, // Weighting exponent. Higher values lead to sharper, more localized "blobs".
           max: 1.0, // The maximum intensity value in the predictions.
           gradient: {
             // Custom gradient.
             0.0: "lime",
-            0.4: "yellow",
+            0.3: "green",
+            0.6: "yellow",
             0.7: "orange",
             1.0: "red",
           },
