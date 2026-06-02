@@ -238,18 +238,18 @@
 
         // Remove these later; purely testing data.
         const FALLBACK_POINTS = [
-          [43.2567, 76.9286, 0.05],
-          [43.255, 76.925, 0.05],
-          [43.258, 76.931, 0.05],
-          [43.2195, 76.8448, 0.1],
-          [43.222, 76.8512, 0.1],
-          [43.235, 76.86, 0.9],
-          [43.272, 76.88, 0.85],
-          [43.275, 76.91, 0.1],
-          [43.23, 76.96, 0.1],
-          [44.23, 76.96, 0.0],
-          [44.24, 76.96, 0.0],
-          [44.25, 76.96, 0.0],
+          // [43.2567, 76.9286, 0.05],
+          // [43.255, 76.925, 0.05],
+          // [43.258, 76.931, 0.05],
+          // [43.2195, 76.8448, 0.1],
+          // [43.222, 76.8512, 0.1],
+          // [43.235, 76.86, 0.9],
+          // [43.272, 76.88, 0.85],
+          // [43.275, 76.91, 0.1],
+          // [43.23, 76.96, 0.1],
+          // [44.23, 76.96, 0.0],
+          // [44.24, 76.96, 0.0],
+          // [44.25, 76.96, 0.0],
         ];
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -505,9 +505,9 @@
             currentPoints = points;
             updateIDWLayer(points);
           } catch (err) {
-            console.warn("IDW fetch failed, using fallback", err);
-            currentPoints = FALLBACK_POINTS;
-            updateIDWLayer(FALLBACK_POINTS);
+            console.warn("IDW fetch failed, waiting", err);
+            // currentPoints = FALLBACK_POINTS;
+            // updateIDWLayer(FALLBACK_POINTS);
           } finally {
             loadingEl.style.display = "none";
           }
@@ -526,9 +526,10 @@
 
         // document.getElementById('noise-class').addEventListener('change', () => fetchDataAndUpdate());
 
-        // Initialise with fallback data, then fetch real data.
+        // Initialise and fetch real data.
         map.whenReady(() => {
-          updateIDWLayer(FALLBACK_POINTS);
+          idwLayer._canvas.style.opacity = "0";
+          // updateIDWLayer(FALLBACK_POINTS);
           fetchDataAndUpdate();
         });
 
