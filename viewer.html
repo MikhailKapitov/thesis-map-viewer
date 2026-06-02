@@ -424,8 +424,9 @@
         }
 
         let commentDebounce;
+        let currentAbortController = null;
 
-        async function fetchComments() {
+        async function fetchComments(signal) {
           const zoom = map.getZoom();
           // Only load comments at reasonable zoom levels (Bases on the default Almaty zoom RN).
           if (zoom < 11) {
@@ -444,7 +445,7 @@
                 maxLng: bounds.getEast(),
               });
               const url = `${COMMENTS_API_URL}/api/v1/comments/area?${params}`;
-              const res = await fetch(url);
+              const res = await fetch(url, { signal });
               if (!res.ok) throw new Error("HTTP " + res.status);
               const comments = await res.json();
 
@@ -468,14 +469,24 @@
                 marker.addTo(commentLayer);
               });
             } catch (err) {
-              console.warn("Failed to fetch comments", err);
+              if (err.name !== 'AbortError') {
+                console.warn("Failed to fetch comments", err);
+              }
             }
           }, 500);
         }
 
         // Fetch prediction data from the backend using the currently selected time.
         async function fetchDataAndUpdate() {
-          fetchComments();
+          if (currentAbortController) {
+            currentAbortController.abort();
+          }
+          const controller = new AbortController();
+          currentAbortController = controller;
+          const { signal } = controller;
+
+          fetchComments(signal);
+
           const selectedTimeISO = getSelectedTimeISO();
           if (!selectedTimeISO) {
             console.warn("No valid time selected.");
@@ -489,7 +500,7 @@
             // const noiseClass = document.getElementById('noise-class').value;
             const url = `${PREDICTION_API_URL}/predict?bbox=${bbox}&time=${encodeURIComponent(selectedTimeISO)}`; // &noise_class=${noiseClass}
 
-            const res = await fetch(url);
+            const res = await fetch(url, { signal });
             if (!res.ok) throw new Error("HTTP " + res.status);
             const geojson = await res.json();
 
@@ -505,7 +516,9 @@
             currentPoints = points;
             updateIDWLayer(points);
           } catch (err) {
-            console.warn("IDW fetch failed, waiting", err);
+            if (err.name !== 'AbortError') {
+              console.warn("IDW fetch failed, waiting", err);
+            }
             // currentPoints = FALLBACK_POINTS;
             // updateIDWLayer(FALLBACK_POINTS);
           } finally {
