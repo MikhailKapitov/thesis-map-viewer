@@ -618,6 +618,12 @@
           fetchDebounce = setTimeout(fetchDataAndUpdate, 200);
         }
 
+        // Occasional auto-updates.
+        setInterval(() => {
+          clearTimeout(fetchDebounce);
+          fetchDataAndUpdate();
+        }, 120000);
+
         map.on("moveend", handleMoveEnd);
 
         // document.getElementById('noise-class').addEventListener('change', () => fetchDataAndUpdate());
