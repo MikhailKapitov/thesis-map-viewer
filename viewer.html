@@ -550,7 +550,7 @@
         let fetchDebounce;
         function handleMoveEnd() {
           clearTimeout(fetchDebounce);
-          fetchDebounce = setTimeout(fetchDataAndUpdate, 600);
+          fetchDebounce = setTimeout(fetchDataAndUpdate, 200);
         }
 
         map.on("moveend", handleMoveEnd);
